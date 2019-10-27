@@ -1,0 +1,17 @@
+{
+	"wssURL": "wss://ws-feed.gdax.com",
+	"baseURL": "https://api.gdax.com",
+	"account": {
+			"secret": "XXX",
+			"key": "XXX",
+			"passphrase": "XXX"
+	},
+	"init": {
+		"crypto": "BTC",
+		"currency": "USD",
+		"nbMsgInit": 1000,
+		"side": "buy",
+		"limitMinCash": 1000,
+		"cashReserve" : 100
+	}
+}

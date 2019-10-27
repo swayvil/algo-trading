@@ -1,0 +1,230 @@
+Install docker fro Mac
+https://store.docker.com/editions/community/docker-ce-desktop-mac
+
+1) Install ElasticSearch + Kibana in Docker
+https://github.com/deviantony/docker-elk
+
+cd /Users/vincent/git/docker-elk
+docker-compose up -d
+
+3) Install Grafana in Docker
+https://hub.docker.com/r/grafana/grafana/
+docker pull grafana/grafana
+
+4.1) Run Grafana
+docker run -d -p 3000:3000 grafana/grafana
+Try it out, default admin user is admin/admin.
+http://localhost:3000/login
+
+
+5) Mapping
+5.1) Creation
+PUT nibiru-match-orders
+{
+    "settings" : {
+        "number_of_shards" : 1,
+		"number_of_replicas" : 0
+    },
+    "mappings": {
+		"order": {
+			"_all": {"enabled": false},
+			"properties": {
+				"matchTime": {"type": "date", "index": "true"},
+				"product_id": {"type": "keyword", "index": "true"},
+				"size": {"type": "float", "index": "true"},
+				"price": {"type": "float", "index": "true"},
+				"side": {"type": "keyword", "index": "true"}
+			}
+		}
+	}
+}
+// The index option controls whether field values are indexed. It accepts true or false. Fields that are not indexed are not queryable.
+// curl -XGET 'localhost:9200/_cat/indices?v&pretty'
+
+PUT nibiru-match-orders_sell
+{
+    "settings" : {
+        "number_of_shards" : 1,
+		"number_of_replicas" : 0
+    },
+    "mappings": {
+		"order": {
+			"_all": {"enabled": false},
+			"properties": {
+				"matchTime": {"type": "date", "index": "true"},
+				"product_id": {"type": "keyword", "index": "true"},
+				"size": {"type": "float", "index": "true"},
+				"price": {"type": "float", "index": "true"}
+			}
+		}
+	}
+}
+
+PUT nibiru-match-orders_buy
+{
+    "settings" : {
+        "number_of_shards" : 1,
+		"number_of_replicas" : 0
+    },
+    "mappings": {
+		"order": {
+			"_all": {"enabled": false},
+			"properties": {
+				"matchTime": {"type": "date", "index": "true"},
+				"product_id": {"type": "keyword", "index": "true"},
+				"size": {"type": "float", "index": "true"},
+				"price": {"type": "float", "index": "true"}
+			}
+		}
+	}
+}
+
+PUT nibiru-match-orders-diff-size
+{
+    "settings" : {
+        "number_of_shards" : 1,
+		"number_of_replicas" : 0
+    },
+    "mappings": {
+		"order": {
+			"_all": {"enabled": false},
+			"properties": {
+				"time": {"type": "date", "index": "true"},
+				"product_id": {"type": "keyword", "index": "true"},
+				"diff_size_sell_by_buy": {"type": "float", "index": "true"},
+				"diff_size_buy_by_sell": {"type": "float", "index": "true"},
+				"price": {"type": "float", "index": "true"}
+			}
+		}
+	}
+}
+
+PUT nibiru-match-orders-sub-size
+{
+    "settings" : {
+        "number_of_shards" : 1,
+		"number_of_replicas" : 0
+    },
+    "mappings": {
+		"order": {
+			"_all": {"enabled": false},
+			"properties": {
+				"time": {"type": "date", "index": "true"},
+				"product_id": {"type": "keyword", "index": "true"},
+				"sub_size_sell_by_buy": {"type": "float", "index": "true"},
+				"price": {"type": "float", "index": "true"}
+			}
+		}
+	}
+}
+
+
+
+PUT nibiru-fill-orders
+{
+    "settings" : {
+        "number_of_shards" : 1,
+		"number_of_replicas" : 0
+    },
+    "mappings": {
+		"order": {
+			"_all": {"enabled": false},
+			"properties": {
+				"fillTime": {"type": "date", "index": "true"},
+				"product_id": {"type": "keyword", "index": "true"},
+				"size": {"type": "float", "index": "true"},
+				"price": {"type": "float", "index": "true"},
+				"side": {"type": "keyword", "index": "true"}
+			}
+		}
+	}
+}
+
+5.2) Delete
+POST nibiru-match-orders/_delete_by_query
+{
+    "query" : { 
+        "match_all" : {}
+    }
+}
+DELETE nibiru-match-orders
+
+5.3) Initial load
+POST nibiru-match-orders/order
+{
+	"matchTime": "2017-08-01",
+	"product_id": "0",
+	"size": "0",
+	"price": "0",
+	"side": "buy"
+}
+
+6) For dev, install ElastiSearch go client
+https://github.com/olivere/elastic
+go get gopkg.in/olivere/elastic.v5
+
+import elastic "gopkg.in/olivere/elastic.v5"
+
+
+
+
+
+
+POST /nibiru-match-orders/_search?pretty
+{
+    "aggs" : {
+    "price_ranges" : {
+            "range" : {
+                "field" : "matchTime",
+                "ranges" : [
+                    { "from" : "2017-08-06T13:16:00.000Z", "to" : "2017-08-08T13:15:00.000Z" }
+                ]
+            },
+		    "aggs" : {
+		        "sum_size" : { "sum" : { "field" : "size" } }    // "avg_price" : { "avg" : { "field" : "price" } }
+		    }
+        }
+    }
+}
+
+Reponse :
+...
+"aggregations": {
+    "price_ranges": {
+      "buckets": [
+        {
+          "key": "2017-08-06T13:16:00.000Z-2017-08-08T13:15:00.000Z",
+          "from": 1502025360000,
+          "from_as_string": "2017-08-06T13:16:00.000Z",
+          "to": 1502198100000,
+          "to_as_string": "2017-08-08T13:15:00.000Z",
+          "doc_count": 828,
+          "avg_size": {
+            "value": 0.480626725314644
+          }
+        }
+      ]
+    }
+  }
+
+https://www.elastic.co/guide/en/elasticsearch/reference/5.2/search-aggregations-bucket-range-aggregation.html
+
+
+Insert:
+POST nibiru-match-orders
+{
+		"order": {
+				"matchTime": "",
+				"product_id": "",
+				"size": "",
+				"price": "",
+				"side": ""
+		}
+}
+
+Fetch all dependencies:
+~/go/src/algo-trading$ go get -d ./...
+
+Build project:
+~/go/src$ go install algo-trading/
+

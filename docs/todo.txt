@@ -1,0 +1,15 @@
+***Detecter les tendances ***
+1. Detecter si le marche est a l'achat ou a la vente
+2. Detecter l'acceleration du nombre d'ordres matches
+
+	Si augmentation importante du volume de BTC (issu des ordres matches) sur les 5 dernieres minutes
+		Si le cours courant est superieur de x% par rapport au cours moyen des 5 dernieres minutes, on achete au prix du marche
+		Si le cours courant est inferieur de x% par rapport au cours moyen des 5 dernieres minutes, on vend au prix du marche
+	
+	ex : parametres : periode volume = 5 minutes, ecart volume declencheur = x 2, periode prix = 5 minutes, ecart prix = 0.1%
+		 on defini la periode a 5 minutes, si sur l'heure glissante precedente le volume de BTC (issue des ordres matches) est de 100, soit environ 8 BTC par periode,
+		 et aue sur les 5 dernieres minutes le volume augmente a 20, on a une augmentation de plus de x 2, et on achete au prix du marche.
+
+	On stocke les ordres avec prix + size, dans elasticSearch, et toutes les 5 minutes on recupere :
+	- l'agregation du volume de BTC achetes/vendus sur l'heure glissante
+	- le prix moyen des 5 dernieres minutes
